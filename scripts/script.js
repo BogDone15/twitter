@@ -14,13 +14,14 @@ class FetchData {
 }
 
 class Twitter {
-  constructor({ listElem, modalElems, tweetElems }) {
+  constructor({ user, listElem, modalElems, tweetElems }) {
     const fetchData = new FetchData();
+    this.user = user;
     this.tweets = new Posts();
     this.elements = {
       listElem: document.querySelector(listElem),
       modal: modalElems,
-      tweetElems: 
+      tweetElems
     }
 
     fetchData.getPost()
@@ -29,14 +30,15 @@ class Twitter {
         this.showAllPost();
       });
 
-      this.elements.modal.forEach(this.handlerModal, this);
+    this.elements.modal.forEach(this.handlerModal, this);
+    this.elements.tweetElems.forEach(this.addTweet, this);
 
   }
 
-  renderPosts(tweets) {
+  renderPosts(posts) {
     this.elements.listElem.textContent = '';
 
-    tweets.forEach(({ id, userName, nickname, text, img, likes, getDate }) => {
+    posts.forEach(({ id, userName, nickname, text, img, likes, getDate }) => {
       this.elements.listElem.insertAdjacentHTML('beforeend', `
       <li>
         <article class="tweet">
@@ -53,16 +55,12 @@ class Twitter {
               <div class="tweet-post">
                 <p class="tweet-post__text">${text}</p>
                
-                  ${
-                    img ?
-                    `<figure class="tweet-post__image">
+                  ${img ?
+          `<figure class="tweet-post__image">
                   <img src="${img}" alt="Сообщение ${nickname} Lorem ipsum dolor sit amet, consectetur.">
                   </figure>` :
-                  ''
-                
-                }
-                  
-              
+          ''
+        }
               </div>
             </div>
           </div>
@@ -104,7 +102,7 @@ class Twitter {
       if (target === elem) {
         modalElem.style.display = 'none';
       }
-      
+
     }
 
     buttonElem.addEventListener('click', openModal);
@@ -116,6 +114,40 @@ class Twitter {
     if (overlay) {
       overlayElem.addEventListener('click', closeModal.bind(null, overlayElem));
     }
+
+    this.handlerModal.closeModal = () => {
+      modalElem.style.display = 'none';
+    }
+  }
+
+  addTweet({ text, img, submit }) {
+    const textElem = document.querySelector(text);
+    const imgElem = document.querySelector(img);
+    const submitElem = document.querySelector(submit);
+
+    let imgUrl = '';
+    let tempString = textElem.innerHTML;
+
+    submitElem.addEventListener('click', () => {
+      this.tweets.addPost({
+        userName: this.user.name,
+        nickname: this.user.nick,
+        text: textElem.innerHTML,
+        img: imgUrl
+      });
+      this.showAllPost();
+      this.handlerModal.closeModal();
+    });
+
+    textElem.addEventListener('click', () => {
+      if (textElem.innerHTML === tempString) {
+        textElem.innerHTML = '';
+      }
+    });
+
+    imgElem.addEventListener('click', () => {
+      imgUrl = prompt('Введите адрес изображения!');
+    })
   }
 }
 
@@ -125,7 +157,7 @@ class Posts {
   }
 
   addPost = (tweets) => {
-    this.posts.push(new Post(tweets));
+    this.posts.unshift(new Post(tweets));
   }
 
   deletePost(id) {
@@ -142,7 +174,7 @@ class Post {
     this.id = id || this.generateID();
     this.userName = userName;
     this.nickname = nickname;
-    this.postDate = postDate;
+    this.postDate = postDate ? new Date(postDate) : new Date();
     this.text = text;
     this.img = img;
     this.likes = likes;
@@ -176,6 +208,10 @@ class Post {
 
 const twitter = new Twitter({
   listElem: '.tweet-list',
+  user: {
+    name: 'Богдан',
+    nick: 'man'
+  },
   modalElems: [
     {
       button: '.header__link_tweet',
