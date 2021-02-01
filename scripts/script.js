@@ -14,15 +14,31 @@ class FetchData {
 }
 
 class Twitter {
-  constructor({ user, listElem, modalElems, tweetElems }) {
+  constructor({ 
+    user, 
+    listElem, 
+    modalElems, 
+    tweetElems, 
+    classDeleteTweet, 
+    classLikeTweet,
+    sortElem
+   }) {
     const fetchData = new FetchData();
     this.user = user;
     this.tweets = new Posts();
     this.elements = {
       listElem: document.querySelector(listElem),
+      sortElem: document.querySelector(sortElem),
       modal: modalElems,
-      tweetElems
+      tweetElems,
     }
+
+    this.class = {
+      classDeleteTweet,
+      classLikeTweet
+    }
+
+    this.sortDate = true;
 
     fetchData.getPost()
       .then(data => {
@@ -33,12 +49,15 @@ class Twitter {
     this.elements.modal.forEach(this.handlerModal, this);
     this.elements.tweetElems.forEach(this.addTweet, this);
 
+    this.elements.listElem.addEventListener('click', this.handlerTweet);
+    this.elements.sortElem.addEventListener('click', this.changeSort);
   }
 
   renderPosts(posts) {
+    const sortPost = posts.sort(this.sortFields());
     this.elements.listElem.textContent = '';
 
-    posts.forEach(({ id, userName, nickname, text, img, likes, getDate }) => {
+    sortPost.forEach(({ id, userName, nickname, text, img, likes, liked, getDate, }) => {
       this.elements.listElem.insertAdjacentHTML('beforeend', `
       <li>
         <article class="tweet">
@@ -65,7 +84,8 @@ class Twitter {
             </div>
           </div>
           <footer>
-            <button class="tweet__like">
+            <button class="tweet__like ${liked ? this.class.classLikeTweet.active : ''}"
+            data-id="${id}">
               ${likes}
             </button>
           </footer>
@@ -137,6 +157,7 @@ class Twitter {
       });
       this.showAllPost();
       this.handlerModal.closeModal();
+      textElem.innerHTML = tempString;
     });
 
     textElem.addEventListener('click', () => {
@@ -147,7 +168,37 @@ class Twitter {
 
     imgElem.addEventListener('click', () => {
       imgUrl = prompt('Введите адрес изображения!');
-    })
+    });
+  }
+
+  handlerTweet = (event) => {
+    const target = event.target;
+    if (target.classList.contains(this.class.classDeleteTweet)) {
+      this.tweets.deletePost(target.dataset.id);
+      this.showAllPost();
+    }
+
+    if (target.classList.contains(this.class.classLikeTweet.like)) {
+      this.tweets.likePost(target.dataset.id);
+      this.showAllPost();
+    }
+  }
+
+  changeSort = () => {
+    this.sortDate = !this.sortDate;
+    this.showAllPost();
+  }
+
+  sortFields() {
+    if (this.sortDate) {
+      return (a, b) => {
+        const dateA = new Date(a.postDate);
+        const dateB = new Date(b.postDate);
+        return dateB - dateA;
+      }
+    } else {  
+      return (a, b) => b.likes - a.likes;
+    }
   }
 }
 
@@ -161,11 +212,15 @@ class Posts {
   }
 
   deletePost(id) {
-
+    this.posts = this.posts.filter(item => item.id !== id);
   }
 
-  likedPost(id) {
-
+  likePost(id) {
+    this.posts.forEach(item => {
+      if (item.id === id) {
+        item.changeLike();
+      }
+    });
   }
 }
 
@@ -174,7 +229,7 @@ class Post {
     this.id = id || this.generateID();
     this.userName = userName;
     this.nickname = nickname;
-    this.postDate = postDate ? new Date(postDate) : new Date();
+    this.postDate = postDate ? this.correctDate(postDate) : new Date();
     this.text = text;
     this.img = img;
     this.likes = likes;
@@ -204,6 +259,13 @@ class Post {
     }
     return this.postDate.toLocaleString('ru-RU', options);
   }
+
+  correctDate(date) {
+    if (isNaN(Date.parse(date))) {
+      date = date.replace('/\./g', '/');
+    }
+    return new Date(date);
+  }
 }
 
 const twitter = new Twitter({
@@ -225,7 +287,18 @@ const twitter = new Twitter({
       text: '.modal .tweet-form__text',
       img: '.modal .tweet-img__btn',
       submit: '.modal .tweet-form__btn'
+    },
+    {
+      text: '.wrapper .tweet-form__text',
+      img: '.wrapper .tweet-img__btn',
+      submit: '.wrapper .tweet-form__btn'
     }
-  ]
+  ],
+  classDeleteTweet: 'tweet__delete-button',
+  classLikeTweet: {
+    like: 'tweet__like',
+    active: 'tweet__like_active'
+  },
+  sortElem: '.header__link_sort',
 });
 
