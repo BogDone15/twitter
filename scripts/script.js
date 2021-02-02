@@ -21,7 +21,9 @@ class Twitter {
     tweetElems, 
     classDeleteTweet, 
     classLikeTweet,
-    sortElem
+    sortElem,
+    showUserPostElem,
+    showLikedPostElem
    }) {
     const fetchData = new FetchData();
     this.user = user;
@@ -31,6 +33,8 @@ class Twitter {
       sortElem: document.querySelector(sortElem),
       modal: modalElems,
       tweetElems,
+      showUserPostElem: document.querySelector(showUserPostElem),
+      showLikedPostElem: document.querySelector(showLikedPostElem),
     }
 
     this.class = {
@@ -51,6 +55,9 @@ class Twitter {
 
     this.elements.listElem.addEventListener('click', this.handlerTweet);
     this.elements.sortElem.addEventListener('click', this.changeSort);
+
+    this.elements.showLikedPostElem.addEventListener('click', this.showLikedPost);
+    this.elements.showUserPostElem.addEventListener('click', this.showUserPost);
   }
 
   renderPosts(posts) {
@@ -95,12 +102,14 @@ class Twitter {
     })
   }
 
-  showUserPost() {
-
+  showUserPost = () => {
+    const post = this.tweets.posts.filter(item => item.nickname === this.user.nick);
+    this.renderPosts(post);
   }
 
-  showLikesPost() {
-
+  showLikedPost = () => {
+    const post = this.tweets.posts.filter(item => item.liked);
+    this.renderPosts(post);
   }
 
   showAllPost() {
@@ -300,5 +309,7 @@ const twitter = new Twitter({
     active: 'tweet__like_active'
   },
   sortElem: '.header__link_sort',
+  showUserPostElem: '.header__link_profile',
+  showLikedPostElem: '.header__link_likes',
 });
 
